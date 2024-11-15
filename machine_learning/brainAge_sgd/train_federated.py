@@ -1,27 +1,12 @@
-# INPUTS (features,targets,train_groups,sgd_alpha,sgd_initLR,preproc_steps,dest_dir)
-import pandas as pd
-import numpy as np
-from sklearn.preprocessing import MinMaxScaler, PolynomialFeatures
-df = pd.read_csv('/NAS/deathrow/vincent/declearn_test/data/stroke/new_exp/metadata.csv')
-df = df[df.center=='CHU_Lille']
-df2 = pd.read_csv('/NAS/deathrow/vincent/declearn_test/data/stroke/new_exp/cv_split_v2/train5.csv')
-df = pd.concat((df,df2)).set_index(['sub_id','description'])
+features = None # TO DEFINE -> array-like of shape (n_individuals,n_features)
+targets = None # TO DEFINE -> array-like of shape (n_individuals,)
+train_groups = None # TO DEFINE -> array-like of array-like of indices defining the different clients
+sgd_alpha = None # TO DEFINE -> weight of the SGD regularization
+sgd_lrate = None # TO DEFINE -> initial SGD learning rate
+preproc_steps = None # TO DEFINE -> array-like of sklearn transformers corresponding to the preprocessing
+dest_dir = None # TO DEFINE ->  directory path where the losses and the trained model will be saved
 
-data = pd.read_csv('/NAS/deathrow/vincent/declearn_test/data/stroke/new_exp/synthseg_volumes.csv', index_col=['sub_id','description'])
-cols = data.columns[1:]
-#cols = np.loadtxt('/NAS/deathrow/vincent/declearn_test/data/stroke/new_exp/radiomics_list.txt', dtype=str)
-data[cols] = data[cols].divide(data['total intracranial'], axis='index')
-features = data.loc[df.index,cols].to_numpy()
-targets = df.age.to_numpy()
-train_groups = df.groupby('center').indices.items()
-
-sgd_alpha = 1.2915496650148826e-09
-sgd_initLR = 0.1
-preproc_steps = [
-    MinMaxScaler()#, PolynomialFeatures(degree=2, include_bias=False)
-]
-dest_dir = '/NAS/deathrow/vincent/declearn_test/saved_models/new_models/synthseg_simple_declearn_decay/model5'
-#######
+##### END INPUTS ########
 
 from sklearn.linear_model import SGDRegressor
 from sklearn.pipeline import make_pipeline
@@ -35,7 +20,6 @@ from ..declearn_client_server.server import run_server
 from ..declearn_client_server.client import run_client
 
 BATCH_SIZE = 1
-#POWER_T = 0.25 # The exponent for inverse scaling learning rate. see SGDRegressor doc
 DROP_REMAINDER = False
 
 sgd = SGDRegressor(
@@ -45,7 +29,7 @@ sgd = SGDRegressor(
     tol=None,
     alpha=sgd_alpha
 )
-sgd.intercept_ = 69.38261997405966
+sgd.intercept_ = 69.38261997405966 # corresponds to the mean age in the CHU_Lille dataset
 model = SklearnSGDModel(sgd)
 
 # preproc data
@@ -53,9 +37,8 @@ preproc_pipeline = make_pipeline(*preproc_steps)
 features = preproc_pipeline.fit_transform(features)
 # end preproc
 
-
 client_opt = Optimizer(
-    lrate = LinearDecay(base=sgd_initLR, rate=0.0009, step_level=False)
+    lrate = LinearDecay(base=sgd_lrate, rate=0.0009, step_level=False)
 )
 server_opt = Optimizer(lrate=1.0)
 server = (run_server, (dest_dir, len(train_groups), model, client_opt, server_opt, BATCH_SIZE, DROP_REMAINDER))
