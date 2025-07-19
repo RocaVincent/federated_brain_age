@@ -1,4 +1,4 @@
-This repository contains the code used in the following study: *incoming link*.
+This repository contains the code used in the following study: <https://arxiv.org/abs/2506.15626>.
 
 
 # Radiomics extraction
