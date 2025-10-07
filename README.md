@@ -3,7 +3,7 @@ This repository contains the code used in the following study: *incoming link*.
 
 # Radiomics extraction
 
-The file *./radiomics_ext_params.json* contains the parameters used with Pyradiomics to compute 1560 radiomic features from an MR image.
+The file *./radiomics_ext_params.json* contains the parameters used with Pyradiomics to compute radiomic features from an MR image. The 1381 radiomic features used in our study are listed in *./radiomics_list.txt*.
 
 
 # Machine learning models
